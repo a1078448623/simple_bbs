@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="cn">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <title>首页</title>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <link href="css/indexCSS.css" rel="stylesheet">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <script src="js/bootstrap.min.js"></script>
+    <link href="css/sweetalert.css" rel="stylesheet">
+    <script src="js/sweetalert-dev.js"></script>
+
+</head>
+
+<script>
+    var reqdata;
+    var logflag=false;
+    var beatNum="kong";
+    var newReply;
+    $(function (){
+        let winheight=$(window).height();
+        $("body").height(winheight);
+        getNewReply()
+        setInterval("getNewReply()",100000);
+        $.ajax({
+
+            url:"login/isLogged",
+            method:"post",
+            success:function (res){
+                if(res==="") logflag=false;
+                else{
+                    logflag=true;
+                }
+            }
+        })
+        if($(".d_recommend").attr("class").indexOf("active")!==-1){
+            $.ajax({
+                url:"recom/getRecArt",
+                method: "post",
+                data: {username:"test"},
+                success:function (res){
+                    reqdata=res;
+                    $(".re_body").empty();
+                    $.each(res,function (index,obj){
+
+                        $(".re_body").append("<div class='artBlock' id='"+index+"' onclick='artBlockClik(this)'></div>")
+                        $("#"+index).append("<div class='artBlock_c name_date'>"+obj.nickname +"&ensp;&ensp;"+obj.formate_time+" </div>" +
+                            "<div class='artBlock_c title' >"+obj.title+" </div>" +
+                            "<div class='artBlock_c comments' ><span class='glyphicon glyphicon-thumbs-up' aria-hidden='true' style='font-size: 12px'></span>" +
+                            "&nbsp;"+obj.likes+"   &ensp;<span class='glyphicon glyphicon-edit' aria-hidden='true' style='font-size: 12px'></span>&nbsp;"+obj.comments+
+                            "<span class='type_name'>"+obj.t_name+"</span></div>")
+                    })
+                    $(".re_body").append("<div class='final'>-------没有更多了-------</div>")
+                }
+            })
+        }
+
+        $("#recommend").click(function (){
+            $.ajax({
+                url:"recom/getRecArt",
+                method: "post",
+                data: {username:"test"},
+                success:function (res){
+                    reqdata=res;
+                    $(".re_body").empty();
+                    $.each(res,function (index,obj){
+
+                        $(".re_body").append("<div class='artBlock' id='"+index+"' onclick='artBlockClik(this)'></div>")
+                        $("#"+index).append("<div class='artBlock_c name_date'>"+obj.nickname +"&ensp;&ensp;"+obj.formate_time+" </div>" +
+                            "<div class='artBlock_c title' >"+obj.title+" </div>" +
+                            "<div class='artBlock_c comments' ><span class='glyphicon glyphicon-thumbs-up' aria-hidden='true' style='font-size: 12px'></span>" +
+                            "&nbsp;"+obj.likes+"   &ensp;<span class='glyphicon glyphicon-edit' aria-hidden='true' style='font-size: 12px'></span>&nbsp;"+obj.comments+
+                            "<span class='type_name'>"+obj.t_name+"</span></div>")
+
+                    })
+                    $(".re_body").append("<div class='final'>-------没有更多了-------</div>")
+                }
+            })
+            $(".active").removeClass("active");
+            $(".checked_bot").removeClass("checked_bot");
+            $(".d_recommend").addClass("active");
+            $("#recommend").addClass("checked_bot");
+        });
+        $("#community").click(function (){
+            $(".active").removeClass("active");
+            $(".checked_bot").removeClass("checked_bot");
+            $(".d_community").addClass("active");
+            $("#community").addClass("checked_bot");
+        });
+
+        $("#allread").click(function (){
+            swal({
+                    title:"是否全部设为已读？",
+                    text:"这将会清除所有消息",
+                    type:"info",
+                    showCancelButton: true,
+                    confirmButtonText: "确定",
+                    cancelButtonText: "取消",
+                    closeOnConfirm: true,
+                    closeOnCancel: true
+                },
+                function (isConfirm){
+                    if(isConfirm) {
+                        $.ajax({
+                            url:"message/setRead",
+                            method:"post",
+                            data:{
+                                commt_id:"0"
+                            },
+                            success:function (res){
+                                if(res){
+                                    getNewReply()
+                                    $("#message")[0].click()
+
+                                }
+                            }
+                        })
+
+                    }
+
+                }
+            );
+        })
+
+        $("#message").click(function (){
+            let cnt1=0,cnt2=0;
+            $(".active").removeClass("active");
+            $(".checked_bot").removeClass("checked_bot");
+            $(".d_message").addClass("active");
+            $("#message").addClass("checked_bot");
+             if(!logflag){
+                 $(".m_notlogged").addClass("active_login");
+             }
+             else{
+                 $(".m_logged").addClass("active_login");
+                 clearInterval(beatNum);
+                 $("#newMes").css("color","")
+                 // if(!$.isEmptyObject(newReply)){
+                     // $(".commt_box").remove();
+                     // $(".reply_box").remove()
+                     // $(".m_final").html("")
+                     $(".new_commt").empty()
+                     $(".new_reply").empty()
+                 // }
+                 $.ajax({
+                     url:"message/getReplyed",
+                     method:"post",
+                     success:function (res){
+                         $.each(newReply,function (index,obj){
+
+                             if(obj.reply_floor===0){
+                                    cnt1++;
+                                 $(".new_commt").append("<div class='commt_box'><div class='show_art_title'>[帖子] 您的帖子 <span class='"+obj.to_art_id+" "+obj.id+" show_title' " +
+                                     "onclick='gotoArt(this)'> "+obj.title.substr(0,10)+".....</span>中</div>" +
+                                     "<div class='conuser'>" +
+                                     "<div class='photo com_pho'><img src='img/default.jpg' class='img-circle' alt='' id='img"+index+"' style='width: 35px;height: 35px'/>" +
+                                     " </div><div class='com_mes'>"+
+                                     "<div class='com_nic'>"+obj.nickname+"</div>" +
+                                     "<div class='com_tim'>"+obj.formate_time+"<span>第"+obj.floor+"楼</span>" +
+                                     "</div></div></div>" +
+                                     "<div class='comment' id='comm"+index+"' > </div>" +
+                                     "" +
+                                     "</div>")
+                                 $("#comm"+index)[0].innerText=obj.content
+                                 if(obj.himage!=="null"){
+                                     $("#img"+index).attr("src","img/"+obj.himage);
+                                 }
+                             }
+                             else{
+                                $.each(res,function (index2,obj2){
+                                    cnt2++;
+                                    if(obj.nickname!==obj2.nickname && obj.to_commt_id===obj2.id){
+                                        $(".new_reply").append("<div class='reply_box'><div class='show_art_title'>[帖子] 在帖子 <span class='"+obj.to_art_id+" "+obj.id+" show_title' " +
+                                            "onclick='gotoArt(this)'> "+obj.title.substr(0,10)+".....</span>中</div>" +
+                                            "<div class='conuser'>" +
+                                            "<div class='photo com_pho'><img src='img/default.jpg' class='img-circle' alt='' id='2img"+index+"' style='width: 35px;height: 35px'/>" +
+                                            " </div><div class='com_mes'>"+
+                                            "<div class='com_nic'>"+obj.nickname+"</div>" +
+                                            "<div class='com_tim'>"+obj.formate_time +
+                                            "</div></div></div>" +
+                                            "<div class='primary_reply'>" +
+                                            "<div>回复"+obj2.floor+"楼 @"+obj2.nickname+"发表的:</div>" +
+                                            "<div class='min_comment' id='comm2_min"+index+"'></div>" +
+                                            "</div>" +
+                                            "<div class='comment' id='comm2"+index+"' > </div>" +
+                                            "" +
+                                            "</div>")
+                                        $("#comm2"+index)[0].innerText=obj.content
+                                        $("#comm2_min"+index)[0].innerText=obj2.content
+                                        if(obj.himage!=="null"){
+                                            $("#2img"+index).attr("src","img/"+obj.himage);
+                                        }
+                                    }
+
+                                })
+
+                             }
+
+                         })
+                         $(".new_reply").append("<div class='m_final'>没有新消息了~~</div>")
+                         if(cnt1===0) $(".new_commt").append("<div class='m_final'>没有新消息了~~</div>")
+                     }
+
+                 })
+             }
+
+
+        });
+        $("#person").click(function (){
+            $(".active").removeClass("active");
+            $(".checked_bot").removeClass("checked_bot");
+            $(".d_person").addClass("active");
+            $("#person").addClass("checked_bot");
+            $.ajax({
+                url:"login/isLogged",
+                method:"post",
+                success:function (res){
+                    if(!logflag){
+                        // $(".active_login").removeClass("active_login")
+                        $(".notlogged").addClass("active_login");
+
+                    }
+                    else{
+                        //$(".active_login").removeClass("active_login")
+                        $(".logged").addClass("active_login");
+                        $("#u_nickname").html(res.nickname);
+                        if(res.himage!=="null")
+                        $("#headPhoto").attr("src","img/"+res.himage);
+                    }
+                }
+
+
+            })
+        });
+        $("#publish").click(function (){
+
+                    if(!logflag){
+                        $(".active").removeClass("active");
+                        $(".checked_bot").removeClass("checked_bot");
+                        $(".d_publish").addClass("active");
+                        $("#publish").addClass("checked_bot");
+                    }
+                    else{
+                        $.ajax({
+                            url:"publish/setType",
+                            method:"post",
+                            data:{
+                                type:"1"
+                            },
+                            success:function (res){
+                                window.location.href="pages/publish.html"
+                            }
+                        })
+
+                    }
+
+        })
+        $(".serchin").focus(function (){
+
+            $(".dis-apper").removeClass("dis-apper");
+            $(".container1").addClass("dis-apper");
+            $(".container2").addClass("show_mes");
+            $("#serch_confirm").focus();
+        })
+        $(".s_back").click(function (){
+            $(".artBlock_s").remove();
+            $(".final_serch").remove();
+            $(".no_data").remove();
+            $("#serch_confirm").val("")
+            $(".dis-apper").removeClass("dis-apper");
+            $(".container2").addClass("dis-apper");
+            // $(".container2").addClass("show_mes");
+            $(".show_mes").removeClass("show_mes");
+        })
+        //单击左侧菜单有图案变化
+        $(".game").click(function (){
+            $(".active_r").removeClass("active_r");
+            $(".checked").removeClass("checked");
+            $(".game").addClass("checked");
+            $(".game_right").addClass("active_r ")
+        });
+        $(".sports").click(function (){
+            $(".active_r").removeClass("active_r");
+            $(".checked").removeClass("checked");
+            $(".sports").addClass("checked");
+            $(".sports_right").addClass("active_r")
+        });
+        $(".learn").click(function (){
+            $(".active_r").removeClass("active_r");
+            $(".checked").removeClass("checked");
+            $(".learn").addClass("checked");
+            $(".learn_right").addClass("active_r")
+        })
+        $(".idols").click(function (){
+            $(".active_r").removeClass("active_r");
+            $(".checked").removeClass("checked");
+            $(".idols").addClass("checked");
+            $(".idols_right").addClass("active_r")
+        })
+        $(".r_item").click(function (){
+            $.ajax({
+                url:"allarts/sendId",
+                method:"post",
+                data:{
+                    type_id:$(this).attr("id")
+                },
+                success:function (res){
+                    window.location.href="pages/communityDetail.html";
+                }
+            })
+
+        });
+
+        $("#serch_sub").click(function (){
+            let mes=$("#serch_confirm").val();
+            if(mes===""){
+                swal("请输入搜索内容")
+            }
+            else {
+                $.ajax({
+                    url:"serch/sechInHome",
+                    method:"post",
+                    data:{
+                        content:mes
+                    },
+                    success:function (res){
+
+                        if($.isEmptyObject(res)){
+                            $(".artBlock_s").remove();
+                            $(".container2").append("<div class='no_data'>没有相应搜索结果</div>")
+                        }
+                        else {
+                            reqdata=res;
+                            $(".artBlock_s").remove();
+                            $(".no_data").remove();
+                            $(".final_serch").remove();
+                            $.each(res, function (index, obj) {
+                                $(".container2").append("<div class='artBlock_s' onclick='artBlockClikSer(this)' id='s" + index + "'></div>")
+                                $("#s" + index).append("<div class='artBlock_c_s name_date_s'>" + obj.formate_time + "&ensp;&ensp;" + obj.t_name + " </div>" +
+                                    "<div class='artBlock_c_s title_s' >" + obj.title + " </div>" +
+                                    "<div class='artBlock_c_s comments_s' ><span class='glyphicon glyphicon-thumbs-up' aria-hidden='true' style='font-size: 12px'></span>&nbsp;" +
+                                    "" + obj.likes + "   &nbsp;&nbsp;<span class='glyphicon glyphicon-edit' aria-hidden='true' style='font-size: 12px'></span>&nbsp;" + obj.comments + "</div>")
+                            })
+                            $(".container2").append("<div class='final_serch'>没有更多了~~</div>")
+                        }
+                    }
+                })
+            }
+
+        })
+        $("#login").click(function (){
+            window.location.href="pages/login.html"
+        })
+        $("#m_login").click(function (){
+            window.location.href="pages/login.html"
+
+        })
+        $("#p_login").click(function (){
+            window.location.href="pages/login.html"
+        })
+        $("#logout").click(function (){
+            $.ajax({
+                url:"login/logout",
+                success:function (res){
+                    if(res) window.location.href="index.html"
+                }
+            })
+        })
+        $(".mylikes").click(function (){
+            window.location.href="pages/myCollect.html";
+        })
+        $(".myarticles").click(function (){
+            window.location.href="pages/myArticles.html";
+        })
+
+        $(".upimage").click(function (){
+            if($(".chooseimg").attr("class").indexOf("showchoose")===-1){
+                $(".chooseimg").addClass("showchoose");
+            }
+            else $(".chooseimg").removeClass("showchoose");
+        })
+
+
+
+
+
+
+
+        $(".changename").click(function (){
+            swal({
+                title:"修改昵称",
+                text:"请输入新的昵称:",
+                type:"input",
+                showCancelButton: true,
+                closeOnConfirm: false,
+                confirmButtonText: "确定",
+                cancelButtonText: "取消"
+
+            },
+                function (inputValue){
+                    if(inputValue===false) return false;
+                    if(inputValue==="") {
+                        swal.showInputError("昵称不能为空");
+                        return false
+                    }
+                    else{
+                        $.ajax({
+                            url:"register/nicknamever",
+                            method:"post",
+                            data:{
+                                nickname:inputValue
+                            },
+                            success:function (res){
+                                if(res){
+                                    // swal("失败","昵称已重复","error")
+                                    swal.showInputError("昵称已重复");
+                                    return false;
+                                }
+                                else {
+                                    $.ajax({
+                                        url:"register/changename",
+                                        method:"post",
+                                        data:{
+                                            new_name:inputValue
+                                        },
+                                        success:function (r){
+                                            if(r){
+                                                swal("成功","修改成功","success")
+                                                $("#u_nickname").html(r);
+                                            }
+                                        }
+                                    })
+
+                                }
+                            }
+                        })
+                    }
+                }
+
+
+            )
+
+        })
+
+    })
+    //单击事件，点击进入具体文章
+    function artBlockClik(that){
+        let num =parseInt($(that).attr("id"));
+        $.ajax({
+            url:"allarts/sendId",
+            data: {
+                art_id:reqdata[num].art_id + '',
+                fromWhere_id: "1"
+            },
+            method: "post",
+            success:function (res){
+                if(res) window.location.href="pages/currentArt.html";
+            }
+        })
+
+    }
+
+    function artBlockClikSer(that){
+        let num =parseInt($(that).attr("id").slice(1));
+        $.ajax({
+            url:"allarts/sendId",
+            data: {
+                art_id:reqdata[num].art_id + '',
+                fromWhere_id: "1"
+            },
+            method: "post",
+            success:function (res){
+                if(res) window.location.href="pages/currentArt.html";
+            }
+        })
+    }
+
+    function getNewReply(){
+        $.ajax({
+            url:"message/getNew",
+            method:"post",
+            success:function (res){
+                if(!$.isEmptyObject(res)){
+                    newReply=res;
+                    if(beatNum!=="kong") clearInterval(beatNum)
+                    beatNum = setInterval("beat()",700);
+                }
+            }
+
+        })
+    }
+
+    function beat(){
+        // console.log($("#newMes").css("color")==="rgb(255, 255, 255)")
+        if($("#newMes").css("color")!=="rgb(0, 0, 0)") $("#newMes").css("color","black");
+
+        else {
+
+            $("#newMes").css("color", "#F25F5C");
+        }
+
+    }
+
+    function gotoArt(that){
+        let list = $(that).attr("class").split(" ");
+
+        $.ajax({
+            url:"allarts/sendId",
+            data: {
+                art_id:list[0],
+                fromWhere_id: "1"
+            },
+            method: "post",
+            success:function (res){
+                $.ajax({
+                    url:"message/setRead",
+                    method:"post",
+                    data:{
+                        commt_id:list[1]
+                    },
+                    success:function (r){
+                        if(r) window.location.href="pages/currentArt.html";
+                    }
+                })
+            }
+        })
+    }
+</script>
+<body>
+<div class="container container1">
+<!--    <div class="d_dout">-->
+    <div class="d_recommend active">
+        <div class="r_top">
+            <div class="input-group" style="padding-top:20px;padding-left: 70px ">
+            <span class="input-group-addon" id="basic-addon1" style="background-color:white;border-right: none ">
+                <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+            </span>
+            <input type="text" class="form-control serchin" placeholder="搜索你感兴趣的内容" aria-describedby="basic-addon1" style="border-left: none;width: 95%">
+            </div>
+        </div>
+        <div class="re_body">
+
+        </div>
+    </div>
+    <div class="d_community">
+        <div class="c_top"><div class="input-group" style="padding-top:20px;padding-left: 70px ">
+            <span class="input-group-addon" id="basic-addon2" style="background-color:white;border-right: none ">
+                <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+            </span>
+            <input type="text" class="form-control serchin" placeholder="搜索你感兴趣的内容" aria-describedby="basic-addon1" style="border-left: none;width: 95%">
+        </div></div>
+        <div class="c_body">
+            <div class="left">
+                <div class="game item checked">游戏</div>
+                <div class="sports item">运动</div>
+                <div class="learn item">学习</div>
+                <div class="news item">时事</div>
+                <div class="anime item">动漫</div>
+                <div class="movie item">电影</div>
+                <div class="idols item">娱乐圈</div>
+            </div>
+            <div class="right ">
+                <div class="game_right active_r r_page">
+                    <div class="lol r_item" id="1">
+                        英雄联盟</div>
+                    <div class="wzry r_item" id="2">王者荣耀</div>
+                </div>
+                <div class="sports_right r_page">
+                    <div class="nba r_item" id="3">NBA</div>
+                    <div class="cba r_item" id="4">CBA</div>
+                </div>
+                <div class="learn_right r_page">
+                    <div class="kaoyan r_item" id="5">考研</div>
+                </div>
+                <div class="idols_right r_page">
+                    <div class="yulequan r_item" id="6">娱乐广场</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div class="d_publish">
+        <div class="p_notlogged">您还未登录，无法发帖<p><input type="button" class="btn btn-info" id="p_login" value="登录"></p></div>
+
+    </div>
+    <div class="d_message">
+        <div class="m_notlogged">您还未登录，无法查看个人消息<p><input type="button" class="btn btn-info" id="m_login" value="登录"></p></div>
+        <div class="m_logged">
+            <div class="m_top">
+                <div class="m_rep"></div>
+                <div class="m_title">消息</div>
+                <div class="all_read"><button id="allread" type="button" class="btn btn-default">全部已读</button> </div>
+            </div>
+            <div class="m_body">
+                <div class="new_tag">最新评论</div>
+                <div class="new_commt">
+<!--                    <div class="m_final">没有新消息了~~</div>-->
+                </div>
+                <div class="new_tag">最新回复</div>
+                <div class="new_reply">
+                    <div class="m_final">没有新消息了~~</div>
+                </div>
+        </div>
+        </div>
+    </div>
+    <div class="d_person">
+        <div class="notlogged">您还未登录，无法查看个人信息<p><input type="button" class="btn btn-info" id="login" value="登录"/></p></div>
+        <div class="logged">
+            <div class="p_top"><span>个人中心</span></div>
+            <div class="p_body">
+
+                <div class="usr_msg"><div class="show_photo"><img id="headPhoto" alt="" class="img-circle" src="img/default.jpg" style="width: 60px;height: 60px"></div><div id="u_nickname"></div></div>
+                <div class="changename"><div style="width: 80%;float: left;padding-left: 10px">修改昵称</div>
+                    <span class="glyphicon glyphicon-menu-right" aria-hidden="true" style="font-size: 20px;line-height: 48px;padding-left: 30px"></span>
+                </div>
+                <div class="upimage"><div style="width: 80%;float: left;padding-left: 10px">修改头像</div>
+                    <span class="glyphicon glyphicon-menu-right" aria-hidden="true" style="font-size: 20px;line-height: 48px;padding-left: 30px"></span>
+                </div>
+                <div class="chooseimg">
+                    <form action="upload/image" id="photo" method="post" enctype="multipart/form-data" role="form">
+                        <input type="file" name="headimage" id="headimage"/>
+                        <button type="submit" id="queren" class="btn-default btn">确认</button>
+                    </form>
+                </div>
+                <div class="myarticles"><div style="width: 80%;float: left;padding-left: 10px">发帖记录</div>
+                    <span class="glyphicon glyphicon-menu-right" aria-hidden="true" style="font-size: 20px;line-height: 48px;padding-left: 30px"></span>
+                </div>
+                <div class="mylikes"><div style="width: 80%;float: left;padding-left: 10px">我的收藏</div>
+                    <span class="glyphicon glyphicon-menu-right" aria-hidden="true" style="font-size: 20px;line-height: 48px;padding-left: 30px"></span>
+                </div>
+
+                <div class="logout">
+                    <input type="button"  class="btn btn-danger" value="退出登录" id="logout">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d_bot">
+        <div id="recommend" class="checked_bot">
+            <div style="height: 30%;line-height: 60px">
+                <span class="glyphicon glyphicon-home" aria-hidden="true" style="font-size: 23px"></span>
+            </div>
+            <div style="height: 50%;line-height: 55px;font-size: 11px">推荐</div>
+
+        </div>
+        <div id="community">
+            <div style="height: 30%;line-height: 60px">
+                <span class="glyphicon glyphicon-th-list" aria-hidden="true" style="font-size: 23px"></span>
+            </div>
+            <div style="height: 50%;line-height: 55px;font-size: 11px">社区</div>
+
+        </div>
+
+        <div id="publish">
+            <div style="line-height: 70px">
+                <span class="glyphicon glyphicon-pencil" aria-hidden="true" style="font-size: 33px;color: #00A8E8;"></span>
+            </div>
+        </div>
+        <div id="message">
+            <div style="height: 30%;line-height: 60px">
+                <span id="newMes" class="glyphicon glyphicon-envelope" aria-hidden="true" style="font-size: 23px"></span>
+            </div>
+            <div style="height: 50%;line-height: 55px;font-size: 11px">消息</div>
+        </div>
+        <div id="person">
+            <div style="height: 30%;line-height: 60px">
+                <span class="glyphicon glyphicon-user" aria-hidden="true" style="font-size: 23px"></span>
+            </div>
+            <div style="height: 50%;line-height: 55px;font-size: 11px">个人</div>
+        </div>
+    </div>
+</div>
+<div class="container container2 dis-apper">
+    <div class="s_top">
+        <div class="s_back">
+            <span class="glyphicon glyphicon-menu-left" aria-hidden="true" style="font-size: 34px;line-height: 61px;padding-left: 6px"></span>
+        </div>
+            <div class="input-group  serch_page" style="padding-top:20px; ">
+                <span class="input-group-addon" id="basic-addon6" style="background-color:white;border-right: none ">
+                    <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                </span>
+                <input type="text" class="form-control" id="serch_confirm" placeholder="搜索你感兴趣的内容" aria-describedby="basic-addon6" style="border-left: none;">
+                <button type="button" class="btn btn-default" id="serch_sub" style="margin-left: 5px">搜索</button>
+            </div>
+
+    </div>
+</div>
+</body>
+</html>

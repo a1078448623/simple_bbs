@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="cn">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <meta name="viewport" content="width=device-width, height=device-height,user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <title>浏览帖子</title>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <link href="../css/currentArtCSS.css" rel="stylesheet">
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/sweetalert.css" rel="stylesheet">
+    <script src="../js/sweetalert-dev.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+</head>
+<script>
+    var commData;
+    var reply_floor=0;
+    var logflag=false;
+    $(function (){
+        let height = $(window).height();
+        $("body").height(height);
+        $(".d_top").height(0.08*height);
+        $(".art_comment").height(0.08*height);
+        let type;
+        $.ajax({
+            url:"../allarts/getFromType",
+            method:"post",
+            success:function (res){
+                type=res;
+            }
+        })
+        $.ajax({
+            url:"../allarts/getreadArt",
+            method:"post",
+            data:{
+                name:""
+            },
+            success:function (data){
+                if(data.himage!=="null"){
+                    $("#headimage").attr("src","../img/"+data.himage);
+                }
+                $(".title").html(data.title);
+                $("#nickname").html(data.nickname);
+                $("#time").html(data.formate_date);
+                $(".content").html(data.content);
+                $(".top_titile").html(data.t_name);
+            }
+        })
+        $.ajax({
+            url:"../commts/getCommts",
+            method:"post",
+            data:{
+                art_id:"",
+            },
+            success:function (res){
+                if(res===""){
+                    $(".container").append("<div class='final'>没有更多回复了~~</div>");
+                }
+                else{
+                    commData=res;
+                    $.each(res,function (index,obj){
+                        if(obj.reply_floor>0){
+                            obj.content="To:"+obj.reply_floor+"楼|  "+" "+obj.content;
+                        }
+                        $(".container").append("" +
+                                                "<div class='conuser'>" +
+                                                "<div class='photo com_pho'><img src='../img/default.jpg' class='img-circle' alt='' id='img"+index+"' style='width: 35px;height: 35px'/>" +
+                            " </div><div class='com_mes'>"+
+                                                "<div class='com_nic'>"+obj.nickname+"</div>" +
+                                                "<div class='com_tim'>"+obj.formate_time+"<span>第"+obj.floor+"楼</span>" +
+                                                "</div></div></div>" +
+                                                "<div class='comment' id='comm"+index+"' > </div><div class='reply' onclick='reply(this)' id='"+index+"'>回复</div>" +
+                            "<div class='line'></div>")
+                        // alert(1)
+                        $("#comm"+index)[0].innerText=obj.content
+                        // alert(2)
+                        if(obj.himage!=="null"){
+                            $("#img"+index).attr("src","../img/"+obj.himage);
+                        }
+                    })
+                    $(".container").append("<div class='final'>没有更多回复了~~</div>");
+                }
+            }
+
+        })
+        $.ajax({
+            url:"../login/isLogged",
+            method:"post",
+            success:function (res){
+                if(res==="") logflag=false;
+                else {
+                    logflag = true;
+                    $.ajax({
+                        url:"../collect/isCollected",
+                        method:"post",
+                        success:function (res){
+                            if(res) {
+                                $(".like").addClass("isliked");
+                                $("#likecon").removeClass("glyphicon glyphicon-star-empty")
+                                $("#likecon").addClass("glyphicon glyphicon-star");
+                            }
+                        }
+                    })
+                }
+            }
+        })
+        $(".back").click(function (){
+           if(type==="2")window.location.href="communityDetail.html";
+           else if(type==="1") window.location.href="../index.html";
+           else if(type==="3") window.location.href="myCollect.html";
+           else if(type==="4") window.location.href="myArticles.html";
+        })
+        $("#comment").focus(function (){
+
+                    if(!logflag){
+                        // let flag = confirm("评论需要登录，是否立即登录？");
+                        swal({
+                            title:"是否立即登录？",
+                                text:"该功能需要登陆",
+                                type:"info",
+                            showCancelButton: true,
+                            confirmButtonText: "登录",
+                            cancelButtonText: "取消",
+                            closeOnConfirm: false,
+                            closeOnCancel: true
+                        },
+                            function (isConfirm){
+                            if(isConfirm) window.location.href="login.html";
+
+                        }
+                        );
+                        $("body").removeClass("stop-scrolling")
+                        $(".comment_call").focus();
+                        // if(flag) window.location.href="login.html";
+
+                    }
+                    else{
+                        $(".comment_active").removeClass("comment_active")
+                        $(".report").addClass("comment_active")
+                    }
+
+
+        })
+        $("#comment").blur(function (){
+            if($("#comment").val()==="") {
+                $(".comment_active").removeClass("comment_active")
+                $(".like").addClass("comment_active")
+                reply_floor=0;
+            }
+        })
+        $(".report").click(function (){
+            // swal($("#comment").val())
+            //alert($("#comment").val())
+            if($("#comment").val()==="") alert("评论为空")
+            else{
+                $.ajax({
+                    url:"../commts/getnums",
+                    method:"post",
+                    data:{
+                        test:""
+                    },
+                    success:function (res){
+                        $.ajax({
+                            url:"../commts/addComment",
+                            method:"post",
+                            data:{
+                                content:$("#comment").val(),
+                                floor:res+1,
+                                reply_floor:reply_floor
+
+                            },
+                            success:function (reply){
+                                if(reply){
+                                    swal({
+                                        title:"评论成功！",
+                                        type:"success",
+                                        showCancelButton: false,
+                                        confirmButtonText: "返回",
+                                        closeOnConfirm: true
+                                    },
+                                        function (isConfirm){
+                                            if(isConfirm) {
+                                                reply_floor=0;
+                                                location.reload();
+                                            }
+                                        }
+
+                                    )
+                                    //alert("评论成功");
+                                    // swal("评论成功");
+
+                                }
+                            }
+                        })
+                    }
+                })
+            }
+        })
+
+        $(".like").click(function (){
+            if(!logflag){
+                swal({
+                        title:"是否立即登录？",
+                        text:"该功能需要登陆",
+                        type:"info",
+                        showCancelButton: true,
+                        confirmButtonText: "登录",
+                        cancelButtonText: "取消",
+                        closeOnConfirm: false,
+                        closeOnCancel: true
+                    },
+                    function (isConfirm){
+                        if(isConfirm) window.location.href="login.html";
+                    }
+                );
+                // let flag = confirm("收藏需要登录，是否立即登录？");
+                // if(flag) window.location.href="login.html";
+            }
+            else {
+                if ($(this).attr("class").indexOf("isliked") === -1) {
+                    $.ajax({
+                        url:"../collect/addCollect",
+                        method:"post",
+                        success:function (res){
+                            if(res) {
+                                $(".like").addClass("isliked");
+                                $("#likecon").removeClass("glyphicon glyphicon-star-empty")
+                                $("#likecon").addClass("glyphicon glyphicon-star");
+                            }
+
+                        }
+                    })
+                }
+                else {
+                    $.ajax({
+                        url:"../collect/removeCollect",
+                        method:"post",
+                        success:function (res){
+                            if(res) {
+                                $(".like").removeClass("isliked");
+                                $("#likecon").removeClass("glyphicon glyphicon-star")
+                                $("#likecon").addClass("glyphicon glyphicon-star-empty");
+                            }
+                        }
+                    })
+
+                }
+            }
+        })
+
+    })
+    function reply(that){
+        if(!logflag){
+            swal({
+                    title:"是否立即登录？",
+                    text:"该功能需要登陆",
+                    type:"info",
+                    showCancelButton: true,
+                    confirmButtonText: "登录",
+                    cancelButtonText: "取消",
+                    closeOnConfirm: false,
+                    closeOnCancel: true
+                },
+                function (isConfirm){
+                    if(isConfirm) window.location.href="login.html";
+                }
+            );
+            // let flag = confirm("回复需要登录，是否立即登录？");
+            // if(flag) window.location.href="login.html";
+        }
+        else{
+            $(".comment_active").removeClass("comment_active")
+            $(".report").addClass("comment_active");
+            $("#comment").focus();
+            let num = parseInt($(that).attr("id"));
+            reply_floor= commData[num].floor;
+        }
+    }
+</script>
+<body>
+<div class="container">
+    <div class="d_top">
+        <div class="back">
+            <span class="glyphicon glyphicon-menu-left" aria-hidden="true" style="font-size: 34px;font-weight: lighter;line-height: 52px;padding-right: 11px"></span>
+        </div>
+        <div class="top_titile"></div>
+        <div class="replace"></div>
+    </div>
+    <div class="d_top_rep"></div>
+
+        <div class="title"></div>
+        <div class="user">
+            <div class="photo">
+                <img id="headimage" src="../img/default.jpg" class="img-circle" alt="" style="width: 35px;height: 35px">
+            </div>
+            <div class="u_mes">
+                <div id="nickname"></div>
+                <div id="time"></div>
+            </div>
+        </div>
+        <div class="content"></div>
+
+    <div class="d_comments">
+        <div class="comment_call">回复</div>
+    </div>
+    <div class="art_comment">
+        <input id="comment" type="text" placeholder="写下你的评论"/>
+        <div class="report">
+            <button type="button" class="btn btn-warning" >发表</button>
+        </div>
+        <div class="like comment_active">
+            <span id="likecon" class="glyphicon glyphicon-star-empty" aria-hidden="true" style="font-size: 35px"></span>
+        </div>
+    </div>
+</div>
+</body>
+</html>

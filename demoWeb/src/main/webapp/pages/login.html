@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="cn">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Login</title>
+    <link href="../css/loginCSS.css" rel="stylesheet">
+    <link href="../css/sweetalert.css" rel="stylesheet">
+    <script src="../js/sweetalert-dev.js"></script>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <script src="../js/bootstrap.min.js"></script>
+        <script>
+            $(function (){
+                let winheight=$(window).height();
+                $("body").height(winheight);
+                let flag1=false,flag2=false,flag3=false,flag4=false;
+                // let el = $("#codeset");
+                // el.click(function (){
+                //     let date = new Date().getTime();
+                //     el.attr("src","/checkcode/gen?"+date)
+                // });
+                $("#reg_click").click(function (){
+                    $(".active").removeClass("active");
+                    $(".d_register").addClass("active");
+                })
+                $("#backreg").click(function (){
+                    $(".active").removeClass("active");
+                    $(".d_login").addClass("active");
+                })
+                $("#back").click(function (){
+                    window.location.href="../index.html";
+                })
+                $("#sub").click(function (){
+                    $.ajax({
+                        url:"../login/confirm",
+                        type:"post",
+                        data:{
+                            username:$("#uname").val(),
+                            password:$("#pass").val(),
+                        },
+                        dataType:"json",
+                        success:function (data){
+                            if(data.loginFlag) {
+                                swal({
+                                    title:"登陆成功！",
+                                    type:"success",
+                                    showCancelButton: false,
+                                    confirmButtonText: "返回首页",
+                                    closeOnConfirm: true
+                                },
+                                    function (isConfirm){
+                                        if(isConfirm) window.location.href="../index.html"
+                                    }
+                                )
+                                // $(".active").removeClass("active");
+                                // $(".login_success").addClass("active");
+                            }
+                            else {
+                                $(".showerror").html(data.severMsg);
+                            }
+                        }
+                    })
+                })
+                $("#r_username").blur(function (){
+                    let reg = /^[0-9a-zA-Z]{7,15}$/
+                    if(reg.test($("#r_username").val())){
+                        $.ajax({
+                            url:"../register/usernamever",
+                            data: {
+                                username:$("#r_username").val()
+                            },
+                            method:"post",
+                            success:function (res){
+                                if(res){
+                                    $(".name_error").addClass("error_show")
+                                    $(".name_error").html("该账号已存在");
+                                    $("#name_correct").removeClass("flag_show")
+                                    $("#name_wrong").addClass("flag_show")
+                                    flag1=false;
+                                }
+                                else {
+                                    // $(".name_error").html("");
+                                    $(".name_error").html("账号只能由7-15位的数字和字母组成")
+                                    $("#name_wrong").removeClass("flag_show")
+                                    $(".name_error").removeClass("error_show")
+                                    $("#name_correct").addClass("flag_show")
+                                    flag1=true;
+                                }
+                            }
+                        })
+                    }
+
+                    else if($("#r_username").val()===""||!reg.test($("#r_username").val())){
+                        $(".name_error").html("账号只能由7-15位的数字和字母组成")
+                        $("#name_correct").removeClass("flag_show")
+                        $("#name_wrong").addClass("flag_show")
+                        $(".name_error").addClass("error_show")
+                        flag1=false;
+                    }
+                })
+                $("#nickname").blur(function (){
+                    if($("#nickname").val()===""){
+                        $(".nickname_error").html("昵称不能为空");
+                        $("#nick_correct").removeClass("flag_show")
+                        $("#nick_wrong").addClass("flag_show")
+                        $(".nickname_error").addClass("error_show")
+                        flag4 = false;
+                    }
+                    else {
+                        $.ajax({
+                            url: "../register/nicknamever",
+                            data: {
+                                nickname: $("#nickname").val()
+                            },
+                            method: "post",
+                            success: function (res) {
+                                if (res) {
+                                    $(".nickname_error").html("该昵称已存在");
+                                    $("#nick_correct").removeClass("flag_show")
+                                    $("#nick_wrong").addClass("flag_show")
+                                    $(".nickname_error").addClass("error_show")
+                                    flag4 = false;
+                                } else {
+                                    $(".nickname_error").html("");
+                                    $("#nick_wrong").removeClass("flag_show")
+                                    $("#nick_correct").addClass("flag_show")
+                                    flag4 = true;
+                                }
+                            }
+                        })
+                    }
+                })
+
+                $("#r_pass").blur(function (){
+
+                    let reg= /^[a-zA-Z_]\w{6,14}$/;
+                    if(reg.test($("#r_pass").val())){
+                        $(".pass_error").removeClass("error_show")
+                        $("#pass_correct").addClass("flag_show")
+                        $("#pass_wrong").removeClass("flag_show")
+                        flag2=true
+                        if($("#r_repass").val()===$("#r_pass").val()){
+                            $(".repass_error").html("")
+                            $("#repass_wrong").removeClass("flag_show")
+                            $("#repass_correct").addClass("flag_show")
+                            flag3=true;
+                        }
+                    }
+                    else{
+                        $(".pass_error").html("以字母开头，7-15位的字母、数字或下划线组成")
+                        $("#pass_correct").removeClass("flag_show")
+                        $("#pass_wrong").addClass("flag_show")
+                        $(".pass_error").addClass("error_show")
+                        flag2=false;
+                    }
+
+                })
+
+                $("#r_repass").blur(function (){
+                    if($("#r_repass").val()!==$("#r_pass").val()){
+                        $(".repass_error").html("两次密码不一致")
+                        $("#repass_correct").removeClass("flag_show")
+                        $("#repass_wrong").addClass("flag_show")
+                        $(".repass_error").addClass("error_show")
+                        flag3=false;
+                    }
+                    else if($("#r_repass").val()!==""){
+                        $(".repass_error").html("")
+                        $("#repass_wrong").removeClass("flag_show")
+                        $("#repass_correct").addClass("flag_show")
+                        flag3=true;
+                    }
+                })
+                $("#r_sub").click(function (){
+
+                    if(flag1 && flag2 && flag3 && flag4){
+                        $.ajax({
+                            url:"../register/submit",
+                            method:"post",
+                            data:{
+                                username:$("#r_username").val(),
+                                password:$("#r_pass").val(),
+                                nickname:$("#nickname").val()
+                            },
+                            success:function (res){
+                                if(res){
+                                    swal({
+                                            title:"注册并登陆成功！",
+                                            type:"success",
+                                            showCancelButton: false,
+                                            confirmButtonText: "返回首页",
+                                            closeOnConfirm: true
+                                        },
+                                        function (isConfirm){
+                                            if(isConfirm) window.location.href="../index.html"
+                                        }
+                                    )
+                                }
+                            }
+                        })
+                    }
+                    else {
+                        swal({
+                                title:"请检查输入的信息！",
+                                type:"error",
+                                showCancelButton: false,
+                                confirmButtonText: "返回",
+                                closeOnConfirm: true
+                            }
+                        )
+                    }
+                })
+
+
+
+            });
+        </script>
+    </head>
+<body>
+    <div class="container">
+        <div class="d_login active">
+            <div class="login_top"><span id="back" class="glyphicon glyphicon-menu-left" aria-hidden="true" style="font-size: 34px;line-height: 58px;padding-left: 10px"></span></div>
+            <div class="loginput">
+                <div class="input-group username">
+                    <span class="input-group-addon" id="basic-addon1" style="background-color:white;border-right: none ">
+                        <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+                    </span>
+                    <input type="text" class="form-control" aria-describedby="basic-addon1" name="username" id="uname" placeholder="请输入账号"/>
+                </div>
+<!--                <div class="password"><span>密码:</span><input type="password" name="password" id="pass" placeholder="请输入密码"></div>-->
+                <div class="input-group password">
+                    <span class="input-group-addon" id="basic-addon2" style="background-color:white;border-right: none ">
+                        <span class="glyphicon glyphicon-lock" aria-hidden="true"></span>
+                    </span>
+                    <input type="password" class="form-control" aria-describedby="basic-addon2" name="username" id="pass" placeholder="请输入密码"/>
+                </div>
+                <div class="button"><button type="button" id="sub" class="btn btn-info">登录</button></div>
+            </div>
+            <div class="register"><button type="button" class="btn btn-default" id="reg_click">立即注册</button> </div>
+            <div class="showerror" style="color:red;width: 100%;text-align: center"></div>
+        </div>
+        <div class="d_register">
+            <div class="register_top" style="width: 100%;height: 10%">
+            <span id="backreg" class="glyphicon glyphicon-menu-left" aria-hidden="true" style="font-size: 34px;line-height: 58px;padding-left: 10px"></span>
+        </div>
+            <div class="r_input">
+
+                <div class="r_username_all">
+                    <div class="input-group r_username">
+                    <span class="input-group-addon" id="basic-addon3" style="background-color:white;border-right: none ">
+                        <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+                    </span>
+                        <input type="text" class="form-control" aria-describedby="basic-addon3" name="username" id="r_username" placeholder="请输入账号" style="border-left: none"/>
+
+                        <span class="glyphicon glyphicon-ok" id="name_correct" aria-hidden="true" style="font-size: 21px;margin-top: 11px;padding-left: 12px;color: #02c39a"></span>
+                        <span class="glyphicon glyphicon-remove" id="name_wrong" aria-hidden="true" style="font-size: 21px;margin-top: 11px;padding-left: 12px;color: #ff1654"></span>
+                    </div>
+                    <div class="error name_error">账号只能由7-15位的数字和字母组成</div>
+                </div>
+                <div class="r_pass_all">
+                    <div class="input-group r_pass">
+                    <span class="input-group-addon" id="basic-addon4" style="background-color:white;border-right: none ">
+                        <span class="glyphicon glyphicon-lock" aria-hidden="true"></span>
+                    </span>
+                        <input type="password" class="form-control" aria-describedby="basic-addon4" name="username" id="r_pass" placeholder="请输入密码" style="border-left: none"/>
+                        <span class="glyphicon glyphicon-ok" id="pass_correct" aria-hidden="true" style="font-size: 21px;margin-top: 11px;padding-left: 12px;color: #02c39a"></span>
+                        <span class="glyphicon glyphicon-remove" id="pass_wrong" aria-hidden="true" style="font-size: 21px;margin-top: 11px;padding-left: 12px;color: #ff1654"></span>
+
+                    </div>
+                    <div class="error pass_error">以字母开头，7-15位的字母、数字或下划线组成</div>
+                </div>
+                <div class="r_repass_all">
+                    <div class="input-group r_repass">
+                    <span class="input-group-addon" id="basic-addon5" style="background-color:white;border-right: none ">
+                        <span class="glyphicon glyphicon-lock" aria-hidden="true"></span>
+                    </span>
+                        <input type="password" class="form-control" aria-describedby="basic-addon5" name="username" id="r_repass" placeholder="请确认密码" style="border-left: none"/>
+                        <span class="glyphicon glyphicon-ok" id="repass_correct" aria-hidden="true" style="font-size: 21px;margin-top: 11px;padding-left: 12px;color: #02c39a"></span>
+                        <span class="glyphicon glyphicon-remove" id="repass_wrong" aria-hidden="true" style="font-size: 21px;margin-top: 11px;padding-left: 12px;color: #ff1654"></span>
+
+                    </div>
+                    <div class="error repass_error"></div>
+                </div>
+                <div class="nickname_all">
+                    <div class="input-group nickname">
+                    <span class="input-group-addon" id="basic-addon6" style="background-color:white;border-right: none ">
+                        <span class="glyphicon glyphicon-piggy-bank" aria-hidden="true"></span>
+                    </span>
+                        <input type="text" class="form-control" aria-describedby="basic-addon6" name="username" id="nickname" placeholder="请输入昵称" style="border-left: none"/>
+                        <span class="glyphicon glyphicon-ok" id="nick_correct" aria-hidden="true" style="font-size: 21px;margin-top: 11px;padding-left: 12px;color: #02c39a"></span>
+                        <span class="glyphicon glyphicon-remove" id="nick_wrong" aria-hidden="true" style="font-size: 21px;margin-top: 11px;padding-left: 12px;color: #ff1654"></span>
+
+                    </div>
+                    <div class="error nickname_error"></div>
+                </div>
+                <div class="r_sub"><button type="button" id="r_sub" class="btn btn-info">注册</button></div>
+        </div>
+        </div>
+    </div>
+</body>
+</html>
